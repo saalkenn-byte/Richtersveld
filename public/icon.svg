@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="60%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fef3c7"/>
+    </linearGradient>
+    <linearGradient id="mountain1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9a3412"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <linearGradient id="mountain2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c2410c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#skyGrad)"/>
+  
+  <!-- Desert Sun -->
+  <circle cx="256" cy="180" r="70" fill="#fef08a" opacity="0.9"/>
+  
+  <!-- Mountains -->
+  <polygon points="40,430 180,240 310,430" fill="url(#mountain1)"/>
+  <polygon points="210,430 350,220 490,430" fill="url(#mountain2)"/>
+  <polygon points="120,430 270,280 400,430" fill="#7c2d12" opacity="0.7"/>
+  
+  <!-- Orange River stream -->
+  <path d="M 0,430 Q 150,420 256,460 T 512,440 L 512,512 L 0,512 Z" fill="#0284c7" opacity="0.85"/>
+  
+  <!-- Quiver tree silhouette -->
+  <path d="M 120,380 L 122,340 L 110,320 L 114,310 L 124,328 L 134,312 L 138,320 L 126,340 L 128,380 Z" fill="#431407"/>
+  <circle cx="112" cy="310" r="12" fill="#15803d"/>
+  <circle cx="136" cy="312" r="14" fill="#16a34a"/>
+  <circle cx="124" cy="298" r="13" fill="#15803d"/>
+
+  <!-- Text badge -->
+  <rect x="70" y="445" width="372" height="42" rx="21" fill="#431407" opacity="0.9"/>
+  <text x="256" y="473" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#fef3c7" text-anchor="middle" letter-spacing="2">RICHTERSVELD</text>
+</svg>

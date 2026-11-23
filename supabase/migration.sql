@@ -1,0 +1,3 @@
+-- No Supabase tables detected in code.
+-- If your app uses .from('table_name'), tables will appear here automatically.
+-- Run this in Supabase Dashboard → SQL Editor.
