@@ -19,43 +19,52 @@ export async function POST(request: NextRequest) {
 
     const trimmedUser = username.trim().toLowerCase();
     const trimmedPass = password.trim();
+    const envAdminPass = process.env.ADMIN_PASSWORD || "richtersveld2026";
 
-    // Query admin user
     const users = await db.select().from(adminUsers).where(eq(adminUsers.username, trimmedUser));
 
+    let authenticatedUser: { id: number; username: string; fullName: string; role: string | null } | null = null;
+
     if (users.length === 0) {
-      // Fallback check for default admin
-      if (trimmedUser === "admin" && trimmedPass === "richtersveld2026") {
-        return NextResponse.json({
-          success: true,
-          user: {
-            id: 1,
-            username: "admin",
-            fullName: "Richtersveld Gemeenskap Admin Kantoor",
-            role: "superadmin",
-          },
-        });
+      if (trimmedUser === "admin" && trimmedPass === envAdminPass) {
+        authenticatedUser = {
+          id: 1,
+          username: "admin",
+          fullName: "Richtersveld Gemeenskap Admin Kantoor",
+          role: "superadmin",
+        };
       }
+    } else {
+      const admin = users[0];
+      if (admin.passwordHash === trimmedPass || (trimmedUser === "admin" && trimmedPass === envAdminPass)) {
+        await db.update(adminUsers).set({ lastLogin: new Date() }).where(eq(adminUsers.id, admin.id));
+        authenticatedUser = {
+          id: admin.id,
+          username: admin.username,
+          fullName: admin.fullName,
+          role: admin.role,
+        };
+      }
+    }
+
+    if (!authenticatedUser) {
       return NextResponse.json({ success: false, error: "Ongeldige gebruikersnaam of wagwoord." }, { status: 401 });
     }
 
-    const admin = users[0];
-    if (admin.passwordHash !== trimmedPass && trimmedPass !== "richtersveld2026") {
-      return NextResponse.json({ success: false, error: "Ongeldige wagwoord." }, { status: 401 });
-    }
-
-    // Update last login
-    await db.update(adminUsers).set({ lastLogin: new Date() }).where(eq(adminUsers.id, admin.id));
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      user: {
-        id: admin.id,
-        username: admin.username,
-        fullName: admin.fullName,
-        role: admin.role,
-      },
+      user: authenticatedUser,
     });
+
+    response.cookies.set("richtersveld_admin_session", "authenticated", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 8, // 8 ure
+    });
+
+    return response;
   } catch (error) {
     console.error("Admin login error:", error);
     return NextResponse.json({ success: false, error: "Inlogfout" }, { status: 500 });
