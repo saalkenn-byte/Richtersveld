@@ -99,6 +99,7 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           paymentMethods,
           services: validServices,
           subscriptionPlan,
+          imageUrl,
         }),
       });
 
