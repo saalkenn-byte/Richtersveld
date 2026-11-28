@@ -15,6 +15,10 @@ export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
     connectionString: databaseUrl,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    max: 10, // Beperk maksimum verbindings vir Vercel serverless functions
   });
 
 if (process.env.NODE_ENV !== "production") {
