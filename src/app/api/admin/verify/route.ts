@@ -4,6 +4,15 @@ import { businesses, marketplaceListings, rides, communityNotices } from "@/db/s
 import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
+  // Beskerm admin-aksies teen ongemagtigde toegang
+  const sessionCookie = request.cookies.get("richtersveld_admin_session");
+  if (!sessionCookie || sessionCookie.value !== "authenticated") {
+    return NextResponse.json(
+      { success: false, error: "Ongemagtigde toegang. Meld eers as admin aan." },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { type, id, action, status, isFeatured } = body;
@@ -13,8 +22,11 @@ export async function POST(request: NextRequest) {
     }
 
     const targetId = Number(id);
+    if (Number.isNaN(targetId)) {
+      return NextResponse.json({ success: false, error: "Ongeldige ID" }, { status: 400 });
+    }
 
-    // 1. BUSINESS VERIFICATION & ACTIONS
+    // 1. BESIGHEID VERIFIKASIE & STATUS
     if (type === "business") {
       if (action === "verify") {
         await db
@@ -52,6 +64,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: "Besigheid status na hangend verander" });
       }
 
+      if (action === "expireTrial") {
+        await db
+          .update(businesses)
+          .set({
+            isVerified: false,
+            subscriptionStatus: "verval",
+          })
+          .where(eq(businesses.id, targetId));
+
+        return NextResponse.json({ success: true, message: "3-dae proeftydperk gemerk as verval" });
+      }
+
       if (action === "toggleFeatured") {
         await db
           .update(businesses)
@@ -69,7 +93,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. MARKETPLACE
+    // 2. MARKPLEIN
     if (type === "marketplace") {
       if (action === "verify") {
         await db.update(marketplaceListings).set({ isVerified: true }).where(eq(marketplaceListings.id, targetId));
@@ -81,7 +105,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. RIDES
+    // 3. SAAMRYGELEENTHEDE
     if (type === "ride") {
       if (action === "verify") {
         await db.update(rides).set({ isVerified: true }).where(eq(rides.id, targetId));
@@ -93,7 +117,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 4. NOTICES
+    // 4. KENNISGEWINGS
     if (type === "notice") {
       if (action === "verify") {
         await db.update(communityNotices).set({ isVerified: true }).where(eq(communityNotices.id, targetId));
