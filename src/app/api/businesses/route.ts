@@ -94,10 +94,10 @@ export async function POST(request: NextRequest) {
         hours: hours?.trim() || "Ma - Sa: 08:00 - 17:00",
         paymentMethods: paymentMethods || "Kontant, Capitec Pay",
         services: typeof services === "string" ? services : JSON.stringify(services || []),
-        imageUrl: imageUrl?.trim() || "https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&w=600&q=80",
+        imageUrl: imageUrl?.trim() || "https://unsplash.com",
         isVerified: false,
-        verificationStatus: "hangend", // Awaits admin verification
-        subscriptionStatus: "proeftydperk", // 30-day free trial for new local entrepreneurs
+        verificationStatus: "hangend",
+        subscriptionStatus: "proeftydperk",
         subscriptionPlan: subscriptionPlan || "Gemeenskap Basies (R50/m)",
         monthlyFee: 50,
         subscriptionPaidUntil: trialEnd,
@@ -109,14 +109,12 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json({ success: true, business: newBiz }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating business:", error);
+    const errorMessage = error instanceof Error ? error.message : "Onbekende fout";
     return NextResponse.json(
-      { 
-        success: false, 
-        error: `Databasis-fout: ${error?.message || "Onbekende fout"}` 
-      }, 
+      { success: false, error: `Databasis-fout: ${errorMessage}` },
       { status: 500 }
     );
   }
-
+}
