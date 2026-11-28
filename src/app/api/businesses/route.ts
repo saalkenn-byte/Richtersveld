@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { businesses } from "@/db/schema";
 import { desc, ilike, and, eq, or } from "drizzle-orm";
+import { desc, ilike, and, eq, or, gt } from "drizzle-orm";
 
 function getMonthlyFeeFromPlan(plan?: string): number {
   if (!plan) return 50;
@@ -32,8 +33,9 @@ export async function GET(request: NextRequest) {
 
     // Wys slegs geverifieerde besighede aan publieke verbruikers, tensy anders versoek
     if (!includeUnverified) {
-      conditions.push(eq(businesses.isVerified, true));
-    }
+  conditions.push(eq(businesses.isVerified, true));
+  conditions.push(gt(businesses.subscriptionPaidUntil, new Date()));
+}
 
     if (town && town !== "Alle Dorpe" && town !== "all") {
       conditions.push(eq(businesses.town, town));
