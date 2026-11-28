@@ -126,7 +126,7 @@ export default function AddBusinessModal({ isOpen, onClose, lang, onBusinessAdde
           <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2">
             <Sparkles className="w-4 h-4 text-orange-700 flex-shrink-0 mt-0.5" />
             <p className="text-[11px] leading-relaxed">
-              <strong>Gratis 30-dae proeftydperk ingesluit!</strong> Jou besigheid word na registrasie deur die gemeenskapskantoor geverifieer.
+              <strong>Gratis 3-dae proeftydperk ingesluit!</strong> Jou besigheid word na registrasie deur die gemeenskapskantoor geverifieer.
             </p>
           </div>
 
