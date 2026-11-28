@@ -109,12 +109,12 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json({ success: true, business: newBiz }, { status: 201 });
-  } catch (error: unknown) {
+    } catch (error: unknown) {
     console.error("Error creating business:", error);
-    const errorMessage = error instanceof Error ? error.message : "Onbekende fout";
+    const err = error as { message?: string; cause?: { message?: string; code?: string } };
+    const realReason = err?.cause?.message || err?.message || "Onbekende fout";
     return NextResponse.json(
-      { success: false, error: `Databasis-fout: ${errorMessage}` },
+      { success: false, error: `Databasis-fout: ${realReason}` },
       { status: 500 }
     );
   }
-}
