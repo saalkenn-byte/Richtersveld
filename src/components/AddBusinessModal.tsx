@@ -183,6 +183,21 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               />
             </div>
           </div>
+          
+<div>
+  <label className="block font-bold text-stone-700 mb-1">Foto / Logo (Opsioneel)</label>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageUpload}
+    disabled={isUploading}
+    className="w-full text-xs text-stone-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:font-semibold file:bg-amber-100 file:text-amber-900"
+  />
+  {isUploading && <p className="text-[11px] text-amber-700 mt-1">Besig om foto op te laai...</p>}
+  {imageUrl && (
+    <img src={imageUrl} alt="Voorskou" className="mt-2 h-24 w-24 object-cover rounded-lg border border-stone-300" />
+  )}
+</div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
