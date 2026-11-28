@@ -109,8 +109,14 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json({ success: true, business: newBiz }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating business:", error);
-    return NextResponse.json({ success: false, error: "Kon nie besigheid registreer nie" }, { status: 500 });
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: `Databasis-fout: ${error?.message || "Onbekende fout"}` 
+      }, 
+      { status: 500 }
+    );
   }
-}
+
