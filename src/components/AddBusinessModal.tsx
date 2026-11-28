@@ -14,6 +14,30 @@ interface AddBusinessModalProps {
 
 export default function AddBusinessModal({ isOpen, onClose, lang, onBusinessAdded }: AddBusinessModalProps) {
   const [name, setName] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+const [isUploading, setIsUploading] = useState(false);
+
+const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setIsUploading(true);
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (data.success && data.imageUrl) {
+      setImageUrl(data.imageUrl);
+    } else {
+      alert(data.error || "Kon nie foto oplaai nie");
+    }
+  } finally {
+    setIsUploading(false);
+  }
+};
+
   const [ownerName, setOwnerName] = useState("");
   const [category, setCategory] = useState("kos_bakkery");
   const [town, setTown] = useState("Kuboes");
