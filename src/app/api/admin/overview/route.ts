@@ -1,10 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { businesses, subscriptionPayments, marketplaceListings, rides, communityNotices } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const sessionCookie = request.cookies.get("richtersveld_admin_session");
+  if (!sessionCookie || sessionCookie.value !== "authenticated") {
+    return NextResponse.json({ success: false, error: "Ongemagtigde toegang" }, { status: 401 });
+  }
+
   try {
+    const now = new Date();
+
+    // Merk verstreke 3-dae proeftydperke outomaties as 'verval'
+    await db
+      .update(businesses)
+      .set({
+        subscriptionStatus: "verval",
+        isVerified: false,
+      })
+      .where(
+        and(
+          eq(businesses.subscriptionStatus, "proeftydperk"),
+          lt(businesses.subscriptionPaidUntil, now)
+        )
+      );
+
     const [allBiz, allPayments, allMarketplace, allRides, allNotices] = await Promise.all([
       db.select().from(businesses).orderBy(desc(businesses.createdAt)),
       db.select().from(subscriptionPayments).orderBy(desc(subscriptionPayments.paidAt)),
@@ -13,7 +34,6 @@ export async function GET() {
       db.select().from(communityNotices).orderBy(desc(communityNotices.createdAt)),
     ]);
 
-    // Calculate metrics
     const totalBusinesses = allBiz.length;
     const verifiedCount = allBiz.filter((b) => b.isVerified && b.verificationStatus === "goedgekeur").length;
     const pendingVerificationCount = allBiz.filter((b) => b.verificationStatus === "hangend" || !b.isVerified).length;
@@ -25,7 +45,7 @@ export async function GET() {
     const expiredSubs = allBiz.filter((b) => b.subscriptionStatus === "verval").length;
 
     const monthlyProjectedRevenue = allBiz
-      .filter((b) => b.subscriptionStatus === "aktief" || b.subscriptionStatus === "proeftydperk")
+      .filter((b) => b.subscriptionStatus === "aktief")
       .reduce((sum, b) => sum + (b.monthlyFee || 50), 0);
 
     const totalCollectedFees = allPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
