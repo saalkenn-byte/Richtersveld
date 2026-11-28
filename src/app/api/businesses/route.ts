@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Clean whatsapp number - remove spaces and lead plus if needed
     let cleanWa = (whatsapp || phone).replace(/[^0-9]/g, "");
     if (cleanWa.startsWith("0")) {
       cleanWa = "27" + cleanWa.substring(1);
@@ -109,7 +108,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json({ success: true, business: newBiz }, { status: 201 });
-    } catch (error: unknown) {
+  } catch (error: unknown) {
     console.error("Error creating business:", error);
     const err = error as { message?: string; cause?: { message?: string; code?: string } };
     const realReason = err?.cause?.message || err?.message || "Onbekende fout";
@@ -118,3 +117,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
