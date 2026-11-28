@@ -3,7 +3,16 @@ import { db } from "@/db";
 import { subscriptionPayments, businesses } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function GET() {
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const sessionCookie = request.cookies.get("richtersveld_admin_session");
+  return Boolean(sessionCookie && sessionCookie.value === "authenticated");
+}
+
+export async function GET(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ success: false, error: "Ongemagtigde toegang" }, { status: 401 });
+  }
+
   try {
     const list = await db.select().from(subscriptionPayments);
     return NextResponse.json({ success: true, payments: list });
@@ -14,6 +23,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ success: false, error: "Ongemagtigde toegang" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const {
@@ -36,23 +49,31 @@ export async function POST(request: NextRequest) {
 
     const bId = Number(businessId);
     const parsedAmount = Number(amount);
+    const parsedMonths = Math.max(1, Number(monthsToExtend) || 1);
 
-    // 1. Record payment in ledger
+    if (Number.isNaN(bId) || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      return NextResponse.json(
+        { success: false, error: "Ongeldige besigheids-ID of bedrag." },
+        { status: 400 }
+      );
+    }
+
+    // 1. Teken betaling aan in grootboek
     const [newPayment] = await db
       .insert(subscriptionPayments)
       .values({
         businessId: bId,
         amount: parsedAmount,
-        period: period.trim(),
-        paymentMethod: paymentMethod.trim(),
-        reference: reference?.trim() || null,
+        period: period.trim().slice(0, 60),
+        paymentMethod: paymentMethod.trim().slice(0, 60),
+        reference: reference?.trim().slice(0, 100) || null,
         status: "bevestig",
-        notes: notes?.trim() || null,
-        recordedBy: recordedBy?.trim() || "Admin",
+        notes: notes?.trim().slice(0, 300) || null,
+        recordedBy: recordedBy?.trim().slice(0, 60) || "Admin",
       })
       .returning();
 
-    // 2. Extend subscription paid date for business
+    // 2. Verleng intekening vanaf huidige vervaldatum (indien nog in die toekoms) of vandag
     const bizList = await db.select().from(businesses).where(eq(businesses.id, bId));
     let baseDate = new Date();
     if (bizList.length > 0 && bizList[0].subscriptionPaidUntil) {
@@ -63,11 +84,13 @@ export async function POST(request: NextRequest) {
     }
 
     const newExpiry = new Date(baseDate);
-    newExpiry.setDate(newExpiry.getDate() + Number(monthsToExtend) * 30);
+    newExpiry.setDate(newExpiry.getDate() + parsedMonths * 30);
 
     await db
       .update(businesses)
       .set({
+        isVerified: true,
+        verificationStatus: "goedgekeur",
         subscriptionStatus: "aktief",
         subscriptionPaidUntil: newExpiry,
         paymentReference: reference?.trim() || bizList[0]?.paymentReference || null,
@@ -87,6 +110,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ success: false, error: "Ongemagtigde toegang" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { businessId, subscriptionStatus, subscriptionPlan, monthlyFee, subscriptionPaidUntil } = body;
@@ -95,8 +122,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Besigheids ID word vereis" }, { status: 400 });
     }
 
-    const updateData: Record<string, any> = {};
-    if (subscriptionStatus) updateData.subscriptionStatus = subscriptionStatus;
+    const updateData: Record<string, unknown> = {};
+    if (subscriptionStatus) {
+      updateData.subscriptionStatus = subscriptionStatus;
+      // Versteek besigheid outomaties as admin dit op 'verval' stel
+      if (subscriptionStatus === "verval") {
+        updateData.isVerified = false;
+      }
+    }
     if (subscriptionPlan) updateData.subscriptionPlan = subscriptionPlan;
     if (monthlyFee !== undefined) updateData.monthlyFee = Number(monthlyFee);
     if (subscriptionPaidUntil) updateData.subscriptionPaidUntil = new Date(subscriptionPaidUntil);
